@@ -23,6 +23,7 @@ const uint32_t connectTimeoutMs = 5000;
 IPAddress current_ip;
 
 ExtendedKalmanFilter ekf(Eigen::Vector3f(0.1, 0.1, M_PI / 4));
+Eigen::Vector3f x_c_1;
 
 // connect to available wifi
 void connect2WiFi() {
@@ -74,7 +75,7 @@ void setup() {
 
   // try ekf
   Eigen::Vector3f z_1(-0.3131, -0.483, 2.1809633);
-  Eigen::Vector3f x_c_1 = ekf.estimate(z_1);
+  x_c_1 = ekf.estimate(z_1);
 
   Serial.printf("z_1 = (%f, %f, %f)", z_1(0), z_1(1), z_1(2));
   Serial.println();
@@ -94,15 +95,18 @@ void loop() {
                   udp.remoteIP().toString().c_str(), udp.remotePort());
     int len = udp.read(incomingPacket, 255);
     if (len > 0) {
-      // TODO: what's this???
+      // set the char next to the last char to 0 (NULL in ascii)
       incomingPacket[len] = 0;
     }
     Serial.printf("UDP packet contents: %s\n", incomingPacket);
 
     // send back a reply to the IP address and port we got the packet from
-    udp.beginPacket(udp.remoteIP(), udp.remotePort());
-    udp.beginPacket(IPAddress(192,168,31,85), 54321);
+    // udp.beginPacket(udp.remoteIP(), udp.remotePort());
+    udp.beginPacket(IPAddress(192,168,31,84), 54321);
     udp.write(replyPacket);
+    char buffer[40];
+    sprintf(buffer, " x_c_1 = (%f, %f, %f)", x_c_1(0), x_c_1(1), x_c_1(2));
+    udp.write(buffer);
 
     udp.endPacket();
   }

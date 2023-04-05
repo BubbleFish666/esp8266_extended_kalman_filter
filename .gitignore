@@ -2,3 +2,10 @@
 .vscode
 .ini
 .csv
+
+include/register_wifi_ap.h
+platformio.ini
+esp-env/
+
+lib/
+test/
