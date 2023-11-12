@@ -73,13 +73,13 @@ void setup() {
   Serial.printf("Now listening at IP %s, UDP port %d\n",
                 WiFi.localIP().toString().c_str(), localUdpPort);
 
-  // try ekf
-  Eigen::Vector3f z_1(-0.3131, -0.483, 2.1809633);
-  x_c_1 = ekf.estimate(z_1);
+  // // try ekf
+  // Eigen::Vector3f z_1(-0.3131, -0.483, 2.1809633);
+  // x_c_1 = ekf.estimate(z_1);
 
-  Serial.printf("z_1 = (%f, %f, %f)", z_1(0), z_1(1), z_1(2));
-  Serial.println();
-  Serial.printf("x_c_1 = (%f, %f, %f)", x_c_1(0), x_c_1(1), x_c_1(2));
+  // Serial.printf("z_1 = (%f, %f, %f)", z_1(0), z_1(1), z_1(2));
+  // Serial.println();
+  // Serial.printf("x_c_1 = (%f, %f, %f)", x_c_1(0), x_c_1(1), x_c_1(2));
 }
 
 // send sensor data via UART to esp8266 esp does the ekf calculation and sends
@@ -100,12 +100,32 @@ void loop() {
     }
     Serial.printf("UDP packet contents: %s\n", incomingPacket);
 
+    // parse the incoming data into a Eigen vector
+    float z_k_0, z_k_1, z_k_2;
+    char* strtok_indx;
+    char temp_chars[255];
+    strcpy(temp_chars, incomingPacket);
+    
+    strtok_indx = strtok(temp_chars, ",");
+    z_k_0 = atof(strtok_indx);
+    strtok_indx = strtok(NULL, ",");
+    z_k_1 = atof(strtok_indx);
+    strtok_indx = strtok(NULL, ",");
+    z_k_2 = atof(strtok_indx);
+
+    Eigen::Vector3f z_k(z_k_0, z_k_1, z_k_2);
+    Eigen::Vector3f x_c = ekf.estimate(z_k);
+
     // send back a reply to the IP address and port we got the packet from
     // udp.beginPacket(udp.remoteIP(), udp.remotePort());
-    udp.beginPacket(IPAddress(192,168,31,84), 54321);
-    udp.write(replyPacket);
-    char buffer[40];
-    sprintf(buffer, " x_c_1 = (%f, %f, %f)", x_c_1(0), x_c_1(1), x_c_1(2));
+    udp.beginPacket(udp.remoteIP(), 54321);
+    char buffer[100];
+    
+    // sprintf(buffer, " x_c_1 = (%f, %f, %f)", x_c_1(0), x_c_1(1), x_c_1(2));
+    // sprintf(buffer, "%.10f,%.10f,%.10f", z_k(0), z_k(1), z_k(2));
+    // udp.write(buffer);
+
+    sprintf(buffer, "%f,%f,%f", x_c(0), x_c(1), x_c(2));
     udp.write(buffer);
 
     udp.endPacket();
