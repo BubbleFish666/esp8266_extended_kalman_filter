@@ -1,0 +1,3 @@
+[submodule "include/ArduinoEigen"]
+	path = include/ArduinoEigen
+	url = git@github.com:BubbleFish666/ArduinoEigen.git
